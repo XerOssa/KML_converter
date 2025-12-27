@@ -1,7 +1,9 @@
 body {
     background-image: url('/static/images/main_bg.jpg');
-    background-size: cover; /* Dopasowanie tła do rozmiaru okna przeglądarki */
+    background-repeat: repeat; /* Powtarzanie tła w pionie i poziomie */
+    background-size: auto; /* Domyślna wartość - nie zmienia rozmiaru obrazka */
 }
+
 .button {
     justify-content: center;
     align-items: center;
@@ -28,4 +30,14 @@ body {
     align-items: flex-end; /* Wyrównanie przycisków do prawej */
     margin-top: 200px;
     margin-right: 160px;
+
+
+
+}
+
+.private-btn {
+    position: fixed;
+    margin-top: 200px;
+    bottom: 10px;
+    right: 10px;
 }

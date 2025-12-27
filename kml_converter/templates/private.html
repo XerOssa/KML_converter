@@ -1,0 +1,84 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Private Assets</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="{% static  'css/private.css' %}">
+
+</head>
+<body>
+
+<h1 style="text-align: center;">Asset value survey</h1>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Calculate</button>
+</form>
+
+{% if history %}
+    <h2 style="text-align: center;">History</h2>
+
+    <table class="history-table" cellpadding="6">
+
+        <tr>
+            <th>Date</th>
+            <th>Bitcoin</th>
+            <th>Altcoin</th>
+            <th>Silver</th>
+            <th>MWIG40</th>
+            <th>TSMC</th>
+            <th>Cameco</th>
+            <th>Total</th>
+            <th>Deposit</th>
+        </tr>
+
+        {% for row in history %}
+        <tr>
+            <td>{{ row.Date }}</td>
+            <td>{{ row.bitcoin }}</td>
+            <td>{{ row.altcoin }}</td>
+            <td>{{ row.silver }}</td>
+            <td>{{ row.mwig40 }}</td>
+            <td>{{ row.tsmc }}</td>
+            <td>{{ row.cameco }}</td>
+            <td>{{ row.Total }}</td>
+            <td>{{ row.Deposit }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+{% endif %}
+
+
+
+{% if chart_total_balance %}
+    <h3 style="text-align: center;">Total Balance</h3>
+    <img class="chart" src="{% static chart_total_balance %}">
+
+{% endif %}
+
+{% if chart_total_profit %}
+    <h3 style="text-align: center;">Total Profit</h3>
+    <img class="chart" src="{% static chart_total_profit %}">
+
+{% endif %}
+
+{% if chart_diversification %}
+    <h3 style="text-align: center;">Asset Diversification</h3>
+    <img class="chart" src="{% static chart_diversification %}">
+
+
+{% endif %}
+
+{% if chart_monthly_profit %}
+    <h3 style="text-align: center;">Monthly Profit Candles</h3>
+    <img class="chart" src="{% static chart_monthly_profit %}">
+
+{% endif %}
+
+
+
+</body>
+</html>
