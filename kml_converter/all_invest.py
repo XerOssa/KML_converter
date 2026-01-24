@@ -16,10 +16,15 @@ from django.conf import settings
 
 
 def get_binance_data(symbol):
-    url = f"https://api.binance.com/api/v3/ticker/price?symbol={symbol}"
-    response = requests.get(url)
-    data = response.json()
-    return float(data["price"]) if "price" in data else None
+    try:
+        url = f"https://api.binance.com/api/v3/ticker/price?symbol={symbol}"
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
+        data = response.json()
+        return float(data["price"])
+    except Exception as e:
+        print("Binance error:", e)
+        return None
 
 
 def plot_total_balance():
@@ -86,22 +91,45 @@ def plot_total_profit():
 
 def plot_monthly_profit_candles():
     csv_path = os.path.join(settings.BASE_DIR, "balance_data.csv")
-    img_path = os.path.join(settings.BASE_DIR, "kml_converter", "static", "charts", "monthly_profit.png")
+    img_path = os.path.join(
+        settings.BASE_DIR,
+        "kml_converter",
+        "static",
+        "charts",
+        "monthly_profit.png"
+    )
 
     if not os.path.exists(csv_path):
         return None
 
     df = pd.read_csv(csv_path)
-    df['Date'] = pd.to_datetime(df['Date'], format='%Y-%m-%d %H:%M:%S', errors='coerce')
+    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
     df = df.dropna(subset=['Date'])
+
+    if len(df) < 2:
+        return None
+
     df['Profit'] = df['Total'] - df['Deposit']
     df.set_index('Date', inplace=True)
 
     monthly_ohlc = df['Profit'].resample('ME').ohlc()
     monthly_ohlc = monthly_ohlc.dropna()
 
-    if monthly_ohlc.empty:
+    if len(monthly_ohlc) < 1:
         return None
+
+    mpf.plot(
+        monthly_ohlc,
+        type='candle',
+        style='charles',
+        title='Monthly Profit (Candlestick)',
+        ylabel='Profit (PLN)',
+        volume=False,
+        savefig=dict(fname=img_path, dpi=100)
+    )
+
+    return "charts/monthly_profit.png"
+
 
     mpf.plot(
         monthly_ohlc,
@@ -119,33 +147,44 @@ def plot_monthly_profit_candles():
 
 def plot_diversification_asset():
     csv_path = os.path.join(settings.BASE_DIR, "balance_data.csv")
-    img_path = os.path.join(settings.BASE_DIR, "kml_converter", "static", "charts", "asset_diversification.png")
+    img_path = os.path.join(
+        settings.BASE_DIR,
+        "kml_converter",
+        "static",
+        "charts",
+        "asset_diversification.png"
+    )
 
     if not os.path.exists(csv_path):
         return None
 
     df = pd.read_csv(csv_path)
-    df.columns = df.columns.str.strip()  # usuwa ewentualne spacje
+    df.columns = df.columns.str.strip()
 
     if df.empty:
         return None
 
     last = df.iloc[-1]
-    bitcoin_pln = last.get('bitcoin', 0)
-    altcoins_pln = last.get('altcoin', 0)
-    silver = last.get('silver', 0)
-    mwig40 = last.get('mwig40', 0)
-    tsmc = last.get('tsmc', 0)
-    cameco = last.get('cameco', 0)
 
-    labels = ['bitcoin', 'altcoins', 'silver', 'mwig40', 'tsmc', 'cameco']
-    sizes = [bitcoin_pln, altcoins_pln, silver, mwig40, tsmc, cameco]
-    colors = ['#ff9999', '#66b3ff', '#99ff99', '#ffcc99', "#d36f0b",  "#d30bc2"]
-    explode = (0.05, 0.05, 0.05, 0.05, 0.05, 0.05)
+    # columns that are NOT assets
+    excluded_columns = {"Date", "Total", "Deposit"}
 
-    plt.figure(figsize=(6,6))
-    plt.pie(sizes, explode=explode, labels=labels, colors=colors, autopct='%1.1f%%',
-            shadow=True, startangle=140)
+    asset_columns = [col for col in df.columns if col not in excluded_columns]
+
+    sizes = [last[col] for col in asset_columns]
+
+    # optional: remove zero-value assets
+    asset_columns, sizes = zip(
+        *[(c, v) for c, v in zip(asset_columns, sizes) if v > 0]
+    ) if any(sizes) else ([], [])
+
+    plt.figure(figsize=(6, 6))
+    plt.pie(
+        sizes,
+        labels=asset_columns,
+        autopct='%1.1f%%',
+        startangle=140
+    )
     plt.title('Asset Diversification')
     plt.axis('equal')
     plt.tight_layout()
@@ -159,26 +198,19 @@ def plot_diversification_asset():
 
 
 
-def save_to_csv(bitcoin, altcoin, silver, mwig40, tsmc, cameco, total, deposit):
+
+
+def save_to_csv(assets, total, deposit):
     csv_path = os.path.join(settings.BASE_DIR, "balance_data.csv")
-    file_exists = os.path.exists(csv_path)
 
-    with open(csv_path, mode="a", newline="", encoding="utf-8") as file:
-        writer = csv.writer(file)
+    existing_fields = []
+    if os.path.exists(csv_path):
+        with open(csv_path, newline="", encoding="utf-8") as f:
+            reader = csv.reader(f)
+            existing_fields = next(reader)
 
-        if not file_exists:
-            header = [
-                "Date", "bitcoin", "altcoin", "silver",
-                "mwig40", "tsmc", "cameco", "Total", "Deposit"
-            ]
-            writer.writerow(header)
-
-        row = [
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            bitcoin, altcoin, silver,
-            mwig40, tsmc, cameco,
-            total, deposit
-        ]
-        writer.writerow(row)
+    asset_fields = sorted(set(existing_fields) | set(assets.keys()))
+    fieldnames = ["Date"] + [f for f in asset_fields if f not in ("Date", "Total", "Deposit")] + ["Total", "Deposit"]
+    print("CSV SAVED:", assets, total_pln, deposit)
 
 

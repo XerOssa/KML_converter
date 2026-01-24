@@ -1,5 +1,7 @@
+import logging
 import os
 import pandas as pd
+import requests
 from django.shortcuts import redirect, render
 from .forms import XYForm, AssetForm
 from pyproj import Proj, transform
@@ -9,11 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login
 
 
-
-@login_required
-def private_view(request):
-    ...
-
+logger = logging.getLogger(__name__)
 
 
 proj_2000 = Proj(init='epsg:2178')
@@ -35,67 +33,79 @@ def convert_view(request):
 
     return render(request, 'main.html', {'form': form, 'result': result})
 
+
 @login_required
 def private_view(request):
-    result = None
-    profit = None
-
-    DEPO_XTB = 12000
-    DEPO_BINANCE = 8000
-    deposit = DEPO_XTB + DEPO_BINANCE
+    logger.warning("PRIVATE_VIEW CALLED, METHOD=%s", request.method)
 
     csv_path = os.path.join(settings.BASE_DIR, "balance_data.csv")
+
     history = []
+    assets_from_csv = {}
+    profit = None
 
-    if os.path.exists(csv_path):
-        df = pd.read_csv(csv_path)
-        df.columns = df.columns.str.strip()
-        history = df.tail(20).to_dict(orient="records")
+    # ✅ ALWAYS define form
+    form = AssetForm()
 
+    # ---------------- POST ----------------
     if request.method == "POST":
         form = AssetForm(request.POST)
         if form.is_valid():
-            bitcoin = form.cleaned_data["bitcoin"]
-            altcoin = form.cleaned_data["altcoin"]
-            silver = form.cleaned_data["silver"]
-            mwig40 = form.cleaned_data["mwig40"]
-            tsmc = form.cleaned_data["tsmc"]
-            cameco = form.cleaned_data["cameco"]
-            usd = get_binance_data(symbol="BUSDPLN")
-            bitcoin_pln = bitcoin * usd
-            print("bitcoin_pln:", bitcoin_pln)
-            altcoins_pln = (altcoin * usd) - bitcoin_pln
-            saldo_binance = bitcoin_pln + altcoins_pln
-            xtb = silver + mwig40 + tsmc + cameco
-            total_pln = saldo_binance  + xtb
+            deposit = form.cleaned_data["deposit"]
 
+            names = request.POST.getlist("asset_name[]")
+            values = request.POST.getlist("asset_value[]")
+
+            assets = {
+                name.strip(): float(value)
+                for name, value in zip(names, values)
+                if name.strip() and value
+            }
+
+            total_pln = sum(assets.values())
             profit = total_pln - deposit
 
-            save_to_csv(
-                round(bitcoin_pln), round(altcoins_pln), round(silver),
-                round(mwig40), round(tsmc), round(cameco),
-                round(total_pln), round(deposit)
-            )
+            save_to_csv(assets, total_pln, deposit)
+            return redirect("private")
 
-    else:
-        form = AssetForm()
+    # ---------------- READ CSV (GET or after redirect) ----------------
+    if os.path.exists(csv_path):
+        df = pd.read_csv(csv_path)
+        df.columns = df.columns.str.strip()
 
+        history = df.tail(20).to_dict(orient="records")
+
+        if not df.empty:
+            last = df.iloc[-1]
+            excluded = {"Date", "Total", "Deposit"}
+
+            assets_from_csv = {
+                col: float(last[col])
+                for col in df.columns
+                if col not in excluded
+            }
+
+            # prefill deposit
+            form = AssetForm(initial={"deposit": last["Deposit"]})
+
+    # ---------------- CHARTS ----------------
     chart_total_balance = plot_total_balance()
     chart_total_profit = plot_total_profit()
     chart_monthly_profit = plot_monthly_profit_candles()
     chart_diversification = plot_diversification_asset()
 
-
     return render(request, "private.html", {
         "form": form,
-        "result": result,
-        "profit": profit,
         "history": history,
+        "assets": assets_from_csv,
+        "profit": profit,
         "chart_total_balance": chart_total_balance,
         "chart_total_profit": chart_total_profit,
         "chart_monthly_profit": chart_monthly_profit,
-        "chart_diversification": chart_diversification
-})
+        "chart_diversification": chart_diversification,
+    })
+
+
 
 
 def login_view(request):
@@ -112,3 +122,32 @@ def login_view(request):
             error = "Wrong login or password"
 
     return render(request, "login.html", {"error": error})
+
+
+def get_usd_pln():
+    url = "https://api.nbp.pl/api/exchangerates/rates/A/USD/?format=json"
+    response = requests.get(url, timeout=5)
+    response.raise_for_status()
+    data = response.json()
+    return data["rates"][0]["mid"]
+
+
+def save_assets(request):
+    if request.method == "POST":
+        form = AssetForm(request.POST)
+        if form.is_valid():
+
+
+            names = request.POST.getlist("asset_name[]")
+            values = request.POST.getlist("asset_value[]")
+
+            assets = {
+                name: float(value)
+                for name, value in zip(names, values)
+                if name and value
+            }
+
+            # assets = {'bitcoin': 1200, 'gold': 3000, ...}
+
+            print(assets)
+
