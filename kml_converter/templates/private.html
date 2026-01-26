@@ -14,41 +14,57 @@
 
 <form method="post">
     {% csrf_token %}
-    {{ form.as_p }}
+
+    <p>
+        {{ form.deposit.label_tag }}<br>
+        {{ form.deposit }}
+    </p>
+
+    <h3>Assets</h3>
+
+    <div id="assets">
+        {% for name, value in assets.items %}
+        <div class="asset-row">
+            <input type="text" name="asset_name[]" value="{{ name }}">
+            <input type="number" step="0.01" name="asset_value[]" value="{{ value }}">
+        </div>
+        {% endfor %}
+    </div>
+
+    <button type="button" onclick="addAsset()">+</button>
+    <br><br>
+
     <button type="submit">Calculate</button>
 </form>
 
+
 {% if history %}
-    <h2 style="text-align: center;">History</h2>
-
-    <table class="history-table" cellpadding="6">
-
-        <tr>
-            <th>Date</th>
-            <th>Bitcoin</th>
-            <th>Altcoin</th>
-            <th>Silver</th>
-            <th>MWIG40</th>
-            <th>TSMC</th>
-            <th>Cameco</th>
-            <th>Total</th>
-            <th>Deposit</th>
-        </tr>
-
-        {% for row in history %}
-        <tr>
-            <td>{{ row.Date }}</td>
-            <td>{{ row.bitcoin }}</td>
-            <td>{{ row.altcoin }}</td>
-            <td>{{ row.silver }}</td>
-            <td>{{ row.mwig40 }}</td>
-            <td>{{ row.tsmc }}</td>
-            <td>{{ row.cameco }}</td>
-            <td>{{ row.Total }}</td>
-            <td>{{ row.Deposit }}</td>
-        </tr>
+<h2 style="text-align: center;">History</h2>
+<table class="history-table" cellpadding="6">
+    <tr>
+        <th>Date</th>
+        {% for key in history.0.keys %}
+            {% if key != "Date" and key != "Total" and key != "Deposit" %}
+                <th>{{ key }}</th>
+            {% endif %}
         {% endfor %}
-    </table>
+        <th>Total</th>
+        <th>Deposit</th>
+    </tr>
+
+    {% for row in history %}
+    <tr style="text-align: right;">
+        <td>{{ row.Date }}</td>
+        {% for key, value in row.items %}
+            {% if key != "Date" and key != "Total" and key != "Deposit" %}
+                <td>{{ value }}</td>
+            {% endif %}
+        {% endfor %}
+        <td>{{ row.Total }}</td>
+        <td>{{ row.Deposit }}</td>
+    </tr>
+    {% endfor %}
+</table>
 {% endif %}
 
 
@@ -79,6 +95,17 @@
 {% endif %}
 
 
+<script>
+function addAsset() {
+    const div = document.createElement("div");
+    div.className = "asset-row";
+    div.innerHTML = `
+        <input type="text" name="asset_name[]" placeholder="asset name">
+        <input type="number" step="0.01" name="asset_value[]" placeholder="value">
+    `;
+    document.getElementById("assets").appendChild(div);
+}
+</script>
 
 </body>
 </html>

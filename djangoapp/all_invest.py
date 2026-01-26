@@ -65,7 +65,7 @@ def plot_total_profit():
         return None
 
     df = pd.read_csv(csv_path)
-    df['Date'] = pd.to_datetime(df['Date'], format='%Y-%m-%d %H:%M:%S', errors='coerce')
+    df['Date'] = pd.to_datetime(df['Date'], format='%Y-%m-%d %H:%M', errors='coerce')
     df = df.dropna(subset=['Date'])
 
     if df.empty:
@@ -131,18 +131,7 @@ def plot_monthly_profit_candles():
     return "charts/monthly_profit.png"
 
 
-    mpf.plot(
-        monthly_ohlc,
-        type='candle',
-        style='charles',
-        title='Monthly Profit (Candlestick)',
-        ylabel='Profit (PLN)',
-        figratio=(10,6),
-        volume=False,
-        savefig=dict(fname=img_path, dpi=100, pad_inches=0.25)
-    )
 
-    return "charts/monthly_profit.png"
 
 
 def plot_diversification_asset():
@@ -211,6 +200,6 @@ def save_to_csv(assets, total, deposit):
 
     asset_fields = sorted(set(existing_fields) | set(assets.keys()))
     fieldnames = ["Date"] + [f for f in asset_fields if f not in ("Date", "Total", "Deposit")] + ["Total", "Deposit"]
-    print("CSV SAVED:", assets, total_pln, deposit)
+    print("CSV SAVED:", assets, total, deposit)
 
 
