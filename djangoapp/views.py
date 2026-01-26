@@ -31,7 +31,7 @@ def convert_view(request):
     else:
         form = XYForm()
 
-    return render(request, 'main.html', {'form': form, 'result': result})
+    return render(request, 'djangoapp/main.html', {'form': form, 'result': result})
 
 
 @login_required
@@ -94,7 +94,7 @@ def private_view(request):
     chart_monthly_profit = plot_monthly_profit_candles()
     chart_diversification = plot_diversification_asset()
 
-    return render(request, "private.html", {
+    return render(request, "djangoapp/private.html", {
         "form": form,
         "history": history,
         "assets": assets_from_csv,
@@ -121,7 +121,7 @@ def login_view(request):
         else:
             error = "Wrong login or password"
 
-    return render(request, "login.html", {"error": error})
+    return render(request, "djangoapp/login.html", {"error": error})
 
 
 def get_usd_pln():
