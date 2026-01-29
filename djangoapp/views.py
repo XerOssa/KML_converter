@@ -50,6 +50,7 @@ def private_view(request):
     # ---------------- POST ----------------
     if request.method == "POST":
         form = AssetForm(request.POST)
+
         if form.is_valid():
             deposit = form.cleaned_data["deposit"]
 
@@ -67,6 +68,7 @@ def private_view(request):
 
             save_to_csv(assets, total_pln, deposit)
             return redirect("private")
+
 
     # ---------------- READ CSV (GET or after redirect) ----------------
     if os.path.exists(csv_path):
