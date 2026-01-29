@@ -56,7 +56,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'kml_converter.wsgi.application'
+# WSGI_APPLICATION = 'kml_converter.wsgi.application'
 
 
 # Database
@@ -102,7 +102,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
-    "D:/_ROBOTA/python/KML_converter/kml_converter/static",
+    "D:/_ROBOTA/python/DJANGO_APP/kml_converter/static",
 ]
 STATIC_ROOT = os.path.join(BASE_DIR, 'static_root')
 
