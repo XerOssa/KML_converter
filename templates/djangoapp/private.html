@@ -23,12 +23,13 @@
     <h3>Assets</h3>
 
     <div id="assets">
-        {% for name, value in assets.items %}
+        {% for asset in assets %}
         <div class="asset-row">
-            <input type="text" name="asset_name[]" value="{{ name }}">
-            <input type="number" step="0.01" name="asset_value[]" value="{{ value }}">
+            <input type="text" name="asset_name[]" value="{{ asset.name }}">
+            <input type="number" step="0.01" name="asset_value[]" value="{{ asset.value }}">
         </div>
         {% endfor %}
+
     </div>
 
     <button type="button" onclick="addAsset()">+</button>

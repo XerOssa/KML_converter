@@ -14,19 +14,6 @@ from django.conf import settings
 
 
 
-
-def get_binance_data(symbol):
-    try:
-        url = f"https://api.binance.com/api/v3/ticker/price?symbol={symbol}"
-        response = requests.get(url, timeout=5)
-        response.raise_for_status()
-        data = response.json()
-        return float(data["price"])
-    except Exception as e:
-        print("Binance error:", e)
-        return None
-
-
 def plot_total_balance():
     csv_path = os.path.join(settings.BASE_DIR, "balance_data.csv")
     img_path = os.path.join(settings.BASE_DIR, "kml_converter", "static", "charts", "total_balance.png")
@@ -88,7 +75,6 @@ def plot_total_profit():
     return "charts/total_profit.png"
 
 
-
 def plot_monthly_profit_candles():
     csv_path = os.path.join(settings.BASE_DIR, "balance_data.csv")
     img_path = os.path.join(
@@ -129,9 +115,6 @@ def plot_monthly_profit_candles():
     )
 
     return "charts/monthly_profit.png"
-
-
-
 
 
 def plot_diversification_asset():
@@ -185,21 +168,36 @@ def plot_diversification_asset():
     return "charts/asset_diversification.png"
 
 
-
-
+FIELDS_ORDER = [
+    "bitcoin",
+    "altcoin",
+    "silver",
+    "mwig40",
+    "tsmc",
+    "cameco",
+    "samsung",
+    "free_money",
+]
 
 
 def save_to_csv(assets, total, deposit):
     csv_path = os.path.join(settings.BASE_DIR, "balance_data.csv")
+    file_exists = os.path.exists(csv_path)
 
-    existing_fields = []
-    if os.path.exists(csv_path):
-        with open(csv_path, newline="", encoding="utf-8") as f:
-            reader = csv.reader(f)
-            existing_fields = next(reader)
+    with open(csv_path, mode="a", newline="", encoding="utf-8") as file:
+        writer = csv.writer(file)
 
-    asset_fields = sorted(set(existing_fields) | set(assets.keys()))
-    fieldnames = ["Date"] + [f for f in asset_fields if f not in ("Date", "Total", "Deposit")] + ["Total", "Deposit"]
-    print("CSV SAVED:", assets, total, deposit)
+        # ---- HEADER ----
+        if not file_exists:
+            header = ["Date"] + FIELDS_ORDER + ["Total", "Deposit"]
+            writer.writerow(header)
 
+        # ---- ROW ----
+        row = [
+            datetime.now().strftime("%Y-%m-%d %H:%M"),
+            *[int(round(assets.get(field, 0))) for field in FIELDS_ORDER],
+            total,
+            deposit,
+        ]
 
+        writer.writerow(row)

@@ -5,17 +5,7 @@ class XYForm(forms.Form):
     y = forms.FloatField(label='X')
 
 
-class AssetForm(forms.Form):
-    deposit = forms.FloatField(
-        label="Total deposit (PLN)",
-        initial=21000
-    )
 
+class DepositForm(forms.Form):
+    deposit = forms.IntegerField(label="Total deposit (PLN)")
 
-    bitcoin = forms.FloatField()
-    altcoin = forms.FloatField()
-    silver = forms.FloatField()
-    mwig40 = forms.FloatField()
-    tsmc = forms.FloatField()
-    cameco = forms.FloatField()
-    free_money = forms.FloatField()

@@ -1,3 +1,7 @@
 from django.contrib import admin
+from .models import Asset, AssetHolding, AssetTransaction, PortfolioSnapshot
 
-# Register your models here.
+admin.site.register(Asset)
+admin.site.register(AssetHolding)
+admin.site.register(AssetTransaction)
+admin.site.register(PortfolioSnapshot)
