@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
             name='AssetTransaction',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('amount', models.FloatField()),
+                ('amount', models.IntegerField()),
                 ('transaction_type', models.CharField(choices=[('ADD', 'Add'), ('SUB', 'Subtract')], max_length=3)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('asset', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='djangoapp.asset')),
@@ -36,7 +36,7 @@ class Migration(migrations.Migration):
             name='AssetHolding',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('amount', models.FloatField(default=0)),
+                ('amount', models.IntegerField(default=0)),
                 ('asset', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='djangoapp.asset')),
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],

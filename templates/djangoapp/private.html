@@ -17,20 +17,37 @@
 
     <p>
         {{ form.deposit.label_tag }}<br>
-        {{ form.deposit }}
+
+        <input
+        type="text"
+        name="deposit"
+        value="{{ deposit|floatformat:0 }}"
+        readonly
+        >
     </p>
 
     <h3>Assets</h3>
 
-    <div id="assets">
-        {% for asset in assets %}
-        <div class="asset-row">
-            <input type="text" name="asset_name[]" value="{{ asset.name }}">
-            <input type="number" step="0.01" name="asset_value[]" value="{{ asset.value }}">
-        </div>
-        {% endfor %}
+<div id="assets">
+  {% for holding in assets %}
+    <div class="asset-row">
+      <input
+        type="text"
+        name="asset_name[]"
+        value="{{ holding.asset.name }}"
+        readonly
+      >
 
+      <input 
+        type="number"
+        step="any"
+        name="asset_value[]"
+        value="{{ holding.amount|floatformat:0 }}"
+      >
     </div>
+  {% endfor %}
+</div>
+
 
     <button type="button" onclick="addAsset()">+</button>
     <br><br>

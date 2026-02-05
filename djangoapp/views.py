@@ -21,33 +21,27 @@ def private_view(request):
 
     assets_from_db = AssetHolding.objects.filter(user=request.user)
     profit = None
+    last_snapshot = PortfolioSnapshot.objects.last()
+    deposit = last_snapshot.deposit if last_snapshot else 0
 
     if request.method == "POST":
         form = DepositForm(request.POST)
 
         if form.is_valid():
-            deposit = form.cleaned_data["deposit"]
+            deposit = int(form.cleaned_data["deposit"])
 
             names = request.POST.getlist("asset_name[]")
             values = request.POST.getlist("asset_value[]")
 
             assets = {
-                name.strip(): float(value)
+                name.strip(): int(float(value))
                 for name, value in zip(names, values)
                 if name.strip() and value
             }
 
             apply_transactions(request.user, assets)
 
-            total = int(AssetHolding.objects.filter(
-                user=request.user
-            ).aggregate(
-                total=Sum("amount")
-            )["total"] or 0)
-            PortfolioSnapshot.objects.create(
-                total=total,
-                deposit=deposit
-            )
+            total = int(sum(assets.values()))
 
             save_to_csv(assets, total, deposit)
 
@@ -60,6 +54,7 @@ def private_view(request):
         "form": form,
         "assets": assets_from_db,
         "profit": profit,
+        "deposit": deposit,
         "chart_total_balance": plot_total_balance(),
         "chart_total_profit": plot_total_profit(),
         "chart_monthly_profit": plot_monthly_profit_candles(),

@@ -12,7 +12,7 @@ class Asset(models.Model):
 class AssetHolding(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
-    amount = models.FloatField(default=0)
+    amount = models.IntegerField(default=0)
 
     class Meta:
         unique_together = ("user", "asset")
@@ -32,7 +32,7 @@ class AssetTransaction(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
-    amount = models.FloatField()
+    amount = models.IntegerField()
     transaction_type = models.CharField(max_length=3, choices=TRANSACTION_TYPES)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -42,5 +42,5 @@ class AssetTransaction(models.Model):
 
 class PortfolioSnapshot(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
-    total = models.FloatField()
-    deposit = models.FloatField()
+    total = models.IntegerField()
+    deposit = models.IntegerField()
