@@ -22,7 +22,6 @@
         type="text"
         name="deposit"
         value="{{ deposit|floatformat:0 }}"
-        readonly
         >
     </p>
 
@@ -55,35 +54,31 @@
     <button type="submit">Calculate</button>
 </form>
 
-
 {% if history %}
 <h2 style="text-align: center;">History</h2>
 <table class="history-table" cellpadding="6">
     <tr>
         <th>Date</th>
-        {% for key in history.0.keys %}
-            {% if key != "Date" and key != "Total" and key != "Deposit" %}
-                <th>{{ key }}</th>
-            {% endif %}
-        {% endfor %}
+        <th>Asset</th>
         <th>Total</th>
         <th>Deposit</th>
     </tr>
 
     {% for row in history %}
     <tr style="text-align: right;">
-        <td>{{ row.Date }}</td>
-        {% for key, value in row.items %}
-            {% if key != "Date" and key != "Total" and key != "Deposit" %}
-                <td>{{ value }}</td>
-            {% endif %}
-        {% endfor %}
-        <td>{{ row.Total }}</td>
-        <td>{{ row.Deposit }}</td>
+        <td>{{ row.created_at|date:"Y-m-d H:i" }}</td>
+        <td>
+            {% for asset in row.assets.all %}
+                {{ asset.asset.name }}: {{ asset.amount }}<br>
+            {% endfor %}
+
+        <td>{{ row.total }}</td>
+        <td>{{ row.deposit }}</td>
     </tr>
     {% endfor %}
 </table>
 {% endif %}
+
 
 
 

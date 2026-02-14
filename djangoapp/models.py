@@ -41,6 +41,18 @@ class AssetTransaction(models.Model):
 
 
 class PortfolioSnapshot(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     total = models.IntegerField()
     deposit = models.IntegerField()
+
+
+
+class SnapshotAsset(models.Model):
+    snapshot = models.ForeignKey(
+        PortfolioSnapshot,
+        on_delete=models.CASCADE,
+        related_name="assets"
+    )
+    asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
+    amount = models.IntegerField()

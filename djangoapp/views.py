@@ -2,26 +2,30 @@ import logging
 import requests
 from django.shortcuts import redirect, render
 from .forms import DepositForm
-from .models import AssetHolding, Asset, PortfolioSnapshot
+from .models import AssetHolding, SnapshotAsset, PortfolioSnapshot
 from .services import apply_transactions
 from .all_invest import save_to_csv
 from django.db.models import Sum
 from .all_invest import save_to_csv, plot_total_balance, plot_total_profit, plot_monthly_profit_candles, plot_diversification_asset
 from django.conf import settings
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth import authenticate, login
+# from django.contrib.auth.decorators import login_required
+# from django.contrib.auth import authenticate, login
+from django.contrib.auth.models import User
 
 
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
 
 
-@login_required
+# @login_required
 def private_view(request):
-    logger.warning("PRIVATE_VIEW CALLED, METHOD=%s", request.method)
 
-    assets_from_db = AssetHolding.objects.filter(user=request.user)
-    profit = None
-    last_snapshot = PortfolioSnapshot.objects.last()
+    user, _ = User.objects.get_or_create(username="JacekOsa")
+
+
+    assets_from_db = AssetHolding.objects.filter(user=user)
+
+    last_snapshot = PortfolioSnapshot.objects.filter(user=user).order_by("-created_at").first()
+
     deposit = last_snapshot.deposit if last_snapshot else 0
 
     if request.method == "POST":
@@ -39,22 +43,42 @@ def private_view(request):
                 if name.strip() and value
             }
 
-            apply_transactions(request.user, assets)
+            apply_transactions(user, assets)
 
-            total = int(sum(assets.values()))
+            total = AssetHolding.objects.filter(
+                user=user
+            ).aggregate(
+                total=Sum("amount")
+            )["total"] or 0
 
-            save_to_csv(assets, total, deposit)
+            snapshot = PortfolioSnapshot.objects.create(
+                user=user,   # 🔥 nie request.user
+                total=total,
+                deposit=deposit
+            )
+
+            holdings = AssetHolding.objects.filter(user=user)
+
+            for holding in holdings:
+                SnapshotAsset.objects.create(
+                    snapshot=snapshot,
+                    asset=holding.asset,
+                    amount=holding.amount
+                )
 
             return redirect("private")
 
     else:
-        form = DepositForm()
+        form = DepositForm(initial={"deposit": deposit})
+
+    # 🔥 HISTORIA Z BAZY
+    history = PortfolioSnapshot.objects.order_by("-created_at")
 
     return render(request, "djangoapp/private.html", {
         "form": form,
         "assets": assets_from_db,
-        "profit": profit,
         "deposit": deposit,
+        "history": history,
         "chart_total_balance": plot_total_balance(),
         "chart_total_profit": plot_total_profit(),
         "chart_monthly_profit": plot_monthly_profit_candles(),
@@ -65,20 +89,21 @@ def private_view(request):
 
 
 
-def login_view(request):
-    error = None
-    if request.method == "POST":
-        username = request.POST["username"]
-        password = request.POST["password"]
 
-        user = authenticate(request, username=username, password=password)
-        if user:
-            login(request, user)
-            return redirect("private")
-        else:
-            error = "Wrong login or password"
+# def login_view(request):
+#     error = None
+#     if request.method == "POST":
+#         username = request.POST["username"]
+#         password = request.POST["password"]
 
-    return render(request, "djangoapp/login.html", {"error": error})
+#         user = authenticate(request, username=username, password=password)
+#         if user:
+#             login(request, user)
+#             return redirect("private")
+#         else:
+#             error = "Wrong login or password"
+
+#     return render(request, "djangoapp/login.html", {"error": error})
 
 
 def get_usd_pln():
